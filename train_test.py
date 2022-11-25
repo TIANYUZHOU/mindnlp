@@ -17,9 +17,6 @@ dataset_train,dataset_test = CoNLL2000Chunking()
 vocab = text.Vocab.from_dataset(dataset_train,columns=["words"],freq_range=None,top_k=None,
                                    special_tokens=["<pad>","<unk>"],special_first=True)
 
-# vocab = dataset_train.build_vocab(columns=["words"],freq_range=None,top_k=None,
-#                                    special_tokens=["<pad>","<unk>"],special_first=True)
-# lookup_op = text.Lookup(vocab, unknown_token='<unk>')
 
 dataset_train = CoNLL2000Chunking_Process(dataset=dataset_train, vocab=vocab, batch_size=32, max_len=80)
 
@@ -59,72 +56,38 @@ net = BiLSTM_CRF(encoder, head, 23)
 
 optimizer = nn.SGD(net.trainable_params(), learning_rate=0.01, weight_decay=1e-4)
 
-# def forward_without_loss_fn(inputs, labels):
-#     loss_and_logits = net(*inputs, *labels)
-#     return loss_and_logits
-
 grad_fn = ops.value_and_grad(net, None, optimizer.parameters)
-# grad_fn = ops.value_and_grad(forward_without_loss_fn, None, optimizer.parameters)
 
-def train_step(data, seq_length, label):
-    """ train_step """
-    loss, grads = grad_fn(data, seq_length, label)
-    clip = []
-    # for grad in grads:
-    #     new_grad = ops.clip_by_value(grad, Tensor(1.0, ms.float32))
-    #     clip.append(new_grad)
-    grads = ops.clip_by_global_norm(grads, clip_norm=1.0)
-    loss = ops.depend(loss, optimizer(grads))
-    return loss
+print(">>>>>>开始训练<<<<<<")
 
-size = dataset_train.get_dataset_size()
-# print("size:", size)
+# 使用 triner 训练（魔改过的trainer与主仓不一致）
 
-# print(">>>>>>开始训练<<<<<<")
+trainer = Trainer(network=net, train_dataset=dataset_train, eval_dataset=None, metrics=None,
+              epochs=5, loss_fn=None, optimizer=optimizer)
 
-# trainer = Trainer(network=net, train_dataset=dataset_train, eval_dataset=None, metrics=None,
-#               epochs=5, loss_fn=None, optimizer=optimizer)
+trainer.run(tgt_columns="label", jit=False)
 
-# trainer.run(tgt_columns="label", jit=False)
+# 使用原生训练
 
-# itr = dataset_train.create_tuple_iterator()
-# data, label, seq_length = next(itr)
-# print("data:", data)
-# print("label:", label)
-# print("seq_length:", seq_length)
+# def train_step(data, seq_length, label):
+#     """ train_step """
+#     loss, grads = grad_fn(data, seq_length, label)
+#     # clip = []
+#     # for grad in grads:
+#     #     new_grad = ops.clip_by_value(grad, Tensor(1.0, ms.float32))
+#     #     clip.append(new_grad)
+#     grads = ops.clip_by_global_norm(grads, clip_norm=1.0)
+#     loss = ops.depend(loss, optimizer(grads))
+#     return loss
 
-# steps = 500
-# with tqdm(total=steps) as t:
-#     for i in range(steps):
-#         loss = train_step(data, seq_length, label)
-#         t.set_postfix(loss=loss)
-#         t.update(1)
+# size = dataset_train.get_dataset_size()
 
-for batch, (data, label, seq_length) in enumerate(dataset_train.create_tuple_iterator()):
-    loss = train_step(data, seq_length ,label)
-    # if batch % 5 == 0:
-    #     loss, current = loss.asnumpy(), batch
-    #     print(f"loss: {loss}  [{current:>3d}/{size:>3d}]")
-    loss, current = loss.asnumpy(), batch
-    print(f"loss: {loss:>7f}  [{current:>3d}/{size:>3d}]")
-    # print("data:", data)
-    # print("label:", label)
-    # print("seq_length:", seq_length)
-    if str(loss) == "nan":
-        break
-
-
-# with open("log.txt", "w") as f:
-#     np.set_printoptions(threshold=np.inf)
-#     for batch, (data, label, seq_length) in enumerate(dataset_train.create_tuple_iterator()):
-#         f.writelines(f"batch: {batch}\n")
-#         f.writelines(f"data: {data.asnumpy()}\n")
-#         f.writelines(f"label: {label.asnumpy()}\n")
-#         f.writelines(f"seq_length: {seq_length.asnumpy()}\n")
-#         f.writelines("*" * 50)
-#         f.writelines("\n")
-        
-#         if batch == 40:
-#             break
-        # print(data.asnumpy())
-        # break
+# for batch, (data, seq_length, label) in enumerate(dataset_train.create_tuple_iterator()):
+#     loss = train_step(data, seq_length ,label)
+#     loss, current = loss.asnumpy(), batch
+#     print(f"loss: {loss:>7f}  [{current:>3d}/{size:>3d}]")
+#     # print("data:", data)
+#     # print("label:", label)
+#     # print("seq_length:", seq_length)
+#     if str(loss) == "nan":
+#         break
