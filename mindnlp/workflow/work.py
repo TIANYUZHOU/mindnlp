@@ -36,18 +36,10 @@ class Work(metaclass=abc.ABCMeta):
 
     def __init__(self, model, work, **kwargs):
         self.model = model
-        self.is_graph_model = kwargs.get("is_graph_model", False)
         self.work = work
         self.kwargs = kwargs
         self._usage = ""
-        # The PyNative model instance
         self._model = None
-        # The Graph model instance
-        self._input_spec = None
-        self._config = None
-        self._init_class = None
-        self._custom_model = False
-        self._param_updated = False
         # The root directory for storing Workflow related files, default to ~/.mindnlp.
         self._home_path = self.kwargs["home_path"] if "home_path" in self.kwargs else DEFAULT_ROOT
         self._work_flag = self.kwargs["work_flag"] if "work_flag" in self.kwargs else self.model
@@ -58,8 +50,6 @@ class Work(metaclass=abc.ABCMeta):
             self._custom_model = True
         else:
             self._work_path = os.path.join(self._home_path, "workflow", self.work, self.model)
-        if self.is_graph_model:
-            self._graph_model_name = self._get_graph_model_name()
 
         if not self.from_hf_hub:
             pass
@@ -95,12 +85,6 @@ class Work(metaclass=abc.ABCMeta):
         """
         The model output is the logits and pros,
         this function will convert the model output to raw text.
-        """
-
-    @abstractmethod
-    def _construct_input_spec(self):
-        """
-        Construct the input spec for the convert PyNative model to Graph model.
         """
 
     def _get_graph_model_name(self):

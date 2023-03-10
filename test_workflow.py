@@ -1,4 +1,4 @@
-# Copyright 2021 Huawei Technologies Co., Ltd
+# Copyright 2022 Huawei Technologies Co., Ltd
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,19 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ============================================================================
-"""
-MindNLP library.
-"""
-
-from mindnlp.dataset import load_dataset, process
-from mindnlp.utils import less_min_pynative_first
-from mindnlp.workflow.workflow import Workflow
-if less_min_pynative_first:
-    from mindspore import context
-    from mindspore import ms_function as ms_jit
-    context.set_context(mode=context.PYNATIVE_MODE)
-else:
-    from mindspore import jit as ms_jit
+"""Test """
 
 
-__all__ = ['ms_jit', 'load_dataset', 'process']
+from mindnlp import Workflow
+
+
+predictor = Workflow(work="sentiment_analysis", model="bert", from_hf_hub=False)
+
+# output = predictor("你真讨厌")
+output = predictor("这个产品用起来真的很流畅，我非常喜欢")
+
+
+print(output)

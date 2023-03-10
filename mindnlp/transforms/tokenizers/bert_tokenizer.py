@@ -80,7 +80,7 @@ class BertTokenizer(PyTensorOperation):
         """
         text = self._convert_to_unicode(text_input)
         output = self.tokenizer.encode(text)
-        return np.array(output.tokens)
+        return np.array(output.ids)
 
     def _convert_to_unicode(self, text_input):
         """Converts `text` to Unicode (if it's not already), assuming utf-8 input."""
